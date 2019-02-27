@@ -1,5 +1,5 @@
 /*
- * arch/arm/boot/dts/axm5516-amarillo.dts
+ * arch/arm/boot/dts/axm5508-amarillo.dts
  *
  * Copyright (C) 2018 INTEL
  *
@@ -14,7 +14,7 @@
 /memreserve/ 0x00000000 0x00400000;
 
 /include/ "axm55xx.dtsi"
-/include/ "axm5516-cpus.dtsi"
+/include/ "axm5508-cpus.dtsi"
 
 / {
 	model = "Amarillo AXM5500";
@@ -24,10 +24,6 @@
 		device_type = "memory";
 		reg = <0 0x00000000 0 0x40000000>;
 	};
-};
-
-&edac {
-	status = "okay";
 };
 
 &femac {
@@ -114,7 +110,7 @@
 	flash@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "s25fl129p1,spi-nor";
+		compatible = "s25fl129p1";
 		reg = <0x0>;
 		spi-max-frequency = <25000000>;
 		pl022,com-mode = <0>;
