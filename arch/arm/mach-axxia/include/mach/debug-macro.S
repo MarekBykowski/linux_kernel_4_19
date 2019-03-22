@@ -17,3 +17,5 @@
 	ldr	\rp, =(AXXIA_DEBUG_UART_PHYS & 0xffffffff)
 	ldr	\rv, =AXXIA_DEBUG_UART_VIRT
 	.endm
+
+#include <asm/hardware/debug-pl01x.S>
