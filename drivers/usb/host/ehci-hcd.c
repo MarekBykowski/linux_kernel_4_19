@@ -1291,6 +1291,11 @@ MODULE_LICENSE ("GPL");
 #define        PLATFORM_DRIVER         ehci_mv_driver
 #endif
 
+#ifdef CONFIG_USB_CI13612_HCD
+#include "ehci-ci13612.c"
+#define PLATFORM_DRIVER		ci13612_ehci_driver
+#endif
+
 static int __init ehci_hcd_init(void)
 {
 	int retval = 0;
