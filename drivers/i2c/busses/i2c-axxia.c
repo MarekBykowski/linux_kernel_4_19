@@ -1,5 +1,5 @@
 /*
- * This driver implements I2C master functionality using the LSI API2C
+ * This driver implements I2C master functionality using the Intel Axxia API2C
  * controller.
  *
  * NOTE: The controller has a limitation in that it can only do transfers of
@@ -604,7 +604,7 @@ static int axxia_i2c_remove(struct platform_device *pdev)
 
 /* Match table for of_platform binding */
 static const struct of_device_id axxia_i2c_of_match[] = {
-	{ .compatible = "lsi,api2c", },
+	{ .compatible = "axxia,api2c", },
 	{},
 };
 
@@ -622,5 +622,5 @@ static struct platform_driver axxia_i2c_driver = {
 module_platform_driver(axxia_i2c_driver);
 
 MODULE_DESCRIPTION("Axxia I2C Bus driver");
-MODULE_AUTHOR("Anders Berg <anders.berg@lsi.com>");
+MODULE_AUTHOR("Anders Berg <anders.berg@intel.com>");
 MODULE_LICENSE("GPL v2");
