@@ -1259,6 +1259,8 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
 	}
 
 	root = type->mount(type, flags, name, data);
+	pr_info("mb: %s(): %pF type->mount IS_ERR(root) %d\n", 
+			__func__, type->mount, IS_ERR(root));
 	if (IS_ERR(root)) {
 		error = PTR_ERR(root);
 		goto out_free_secdata;

@@ -195,12 +195,17 @@ int __init rd_load_image(char *from)
 		goto noclose_input;
 
 	nblocks = identify_ramdisk_image(in_fd, rd_image_start, &decompressor);
+	pr_info("mb: %s() called from %ps: identify_ramdisk_image(in_fd %d out_fd %d rd_image_start %lx decompressor %ps)\n",
+				__func__, (void *)_RET_IP_, in_fd, out_fd,(unsigned long)rd_image_start, decompressor);
 	if (nblocks < 0)
 		goto done;
 
 	if (nblocks == 0) {
-		if (crd_load(in_fd, out_fd, decompressor) == 0)
+		if (crd_load(in_fd, out_fd, decompressor) == 0) {
+			pr_info("mb: %s(): goto successful_load\n", __func__);
 			goto successful_load;
+		}
+		pr_info("mb: %s(): goto done (res = 0, should be 1)\n", __func__);
 		goto done;
 	}
 

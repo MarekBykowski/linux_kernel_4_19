@@ -22,7 +22,7 @@
 #include <linux/seq_file.h>
 #include <uapi/linux/psci.h>
 
-#define SMC_DEBUG 1
+#define SMC_DEBUG 0
 #if SMC_DEBUG
 #define smc_dbg(...) pr_info(__VA_ARGS__)
 #define seq_printf(...)

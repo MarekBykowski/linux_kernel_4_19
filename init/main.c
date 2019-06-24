@@ -1147,6 +1147,8 @@ static noinline void __init kernel_init_freeable(void)
 
 	do_basic_setup();
 
+	pr_info("mb: %s() marek?\n", __func__);
+
 #ifndef CONFIG_BLK_DEV_INITRD
        /*
         * Use /dev/console to infer if the rootfs is setup properly.
@@ -1177,6 +1179,8 @@ static noinline void __init kernel_init_freeable(void)
 			ramdisk_execute_command, 0) != 0) {
 		ramdisk_execute_command = NULL;
 		prepare_namespace();
+	} else {
+		pr_info("mb: run /init success\n");	
 	}
 
 	/*

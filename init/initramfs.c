@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
+
+#define DEBUG
+
 #include <linux/init.h>
 #include <linux/fs.h>
 #include <linux/slab.h>
@@ -601,6 +604,7 @@ static void __init clean_rootfs(void)
 
 static int __init populate_rootfs(void)
 {
+	pr_info("mb: %s(): is it called?\n", __func__);
 	/* Load the built in initramfs */
 	char *err = unpack_to_rootfs(__initramfs_start, __initramfs_size);
 	if (err)
@@ -610,6 +614,8 @@ static int __init populate_rootfs(void)
 #ifdef CONFIG_BLK_DEV_RAM
 		int fd;
 		printk(KERN_INFO "Trying to unpack rootfs image as initramfs...\n");
+		pr_info("mb: %s(): initrd_start %lx initrd_end %lx\n",
+			__func__, initrd_start, initrd_end);
 		err = unpack_to_rootfs((char *)initrd_start,
 			initrd_end - initrd_start);
 		if (!err) {

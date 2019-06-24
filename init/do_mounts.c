@@ -383,6 +383,9 @@ void __init mount_block_root(char *name, int flags)
 retry:
 	for (p = fs_names; *p; p += strlen(p)+1) {
 		int err = do_mount_root(name, p, flags, root_mount_data);
+		pr_info("\n");
+		pr_info("mb: %s() called from %pF: do_mount_root(name %s, fs_name %s, flags %x, root_mount_data %s) ret %d\n",
+			__func__, (void*) _RET_IP_, name, p, flags, root_mount_data, err);
 		switch (err) {
 			case 0:
 				goto out;
@@ -560,14 +563,17 @@ void __init prepare_namespace(void)
 
 	md_run_setup();
 
+	pr_info("mb: %s(): #1 am I here?\n", __func__);
 	if (saved_root_name[0]) {
 		root_device_name = saved_root_name;
 		if (!strncmp(root_device_name, "mtd", 3) ||
 		    !strncmp(root_device_name, "ubi", 3)) {
+			pr_info("mb: %s(): #2 am I here?\n", __func__);
 			mount_block_root(root_device_name, root_mountflags);
 			goto out;
 		}
 		ROOT_DEV = name_to_dev_t(root_device_name);
+		pr_info("mb: %s(): #3 am I here?\n", __func__);
 		if (strncmp(root_device_name, "/dev/", 5) == 0)
 			root_device_name += 5;
 	}

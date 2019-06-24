@@ -963,6 +963,8 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void 
 		mnt->mnt.mnt_flags = MNT_INTERNAL;
 
 	root = mount_fs(type, flags, name, data);
+	pr_info("mb: %s(): IS_ERR(root) %d\n", 
+		__func__, IS_ERR(root));
 	if (IS_ERR(root)) {
 		mnt_free_id(mnt);
 		free_vfsmnt(mnt);
@@ -2422,6 +2424,7 @@ static int do_add_mount(struct mount *newmnt, struct path *path, int mnt_flags)
 		return PTR_ERR(mp);
 
 	parent = real_mount(path->mnt);
+	pr_info("mb: %s(): real_mount() ret %p\n", __func__, (void*)parent);
 	err = -EINVAL;
 	if (unlikely(!check_mnt(parent))) {
 		/* that's acceptable only for automounts done in private ns */
@@ -2471,6 +2474,7 @@ static int do_new_mount(struct path *path, const char *fstype, int sb_flags,
 		return -ENODEV;
 
 	mnt = vfs_kern_mount(type, sb_flags, name, data);
+	pr_info("mb: mnt %lx\n", (unsigned long)(void*)mnt);
 	if (!IS_ERR(mnt) && (type->fs_flags & FS_HAS_SUBTYPE) &&
 	    !mnt->mnt_sb->s_subtype)
 		mnt = fs_set_subtype(mnt, fstype);
@@ -2790,18 +2794,25 @@ long do_mount(const char *dev_name, const char __user *dir_name,
 			    SB_LAZYTIME |
 			    SB_I_VERSION);
 
-	if (flags & MS_REMOUNT)
+	if (flags & MS_REMOUNT) {
 		retval = do_remount(&path, flags, sb_flags, mnt_flags,
 				    data_page);
-	else if (flags & MS_BIND)
+		pr_info("mb: do_remount\n");
+	} else if (flags & MS_BIND) {
 		retval = do_loopback(&path, dev_name, flags & MS_REC);
-	else if (flags & (MS_SHARED | MS_PRIVATE | MS_SLAVE | MS_UNBINDABLE))
+		pr_info("mb: do_loopback\n");
+	} else if (flags & (MS_SHARED | MS_PRIVATE | MS_SLAVE | MS_UNBINDABLE)) {
 		retval = do_change_type(&path, flags);
-	else if (flags & MS_MOVE)
+		pr_info("mb: do_change_type\n");
+	} else if (flags & MS_MOVE) {
 		retval = do_move_mount(&path, dev_name);
-	else
+		pr_info("mb: do_move_mount\n");
+	} else {
 		retval = do_new_mount(&path, type_page, sb_flags, mnt_flags,
 				      dev_name, data_page);
+		pr_info("mb: %s(): do_new_mount(path %p, type_page %s, sb_flags %u, mnt_flags %u, dev_name %s, data_page %p) ret %d\n",
+			__func__, &path, type_page, sb_flags, mnt_flags, dev_name, data_page, retval);
+	}
 dput_out:
 	path_put(&path);
 	return retval;
@@ -3017,6 +3028,8 @@ int ksys_mount(char __user *dev_name, char __user *dir_name, char __user *type,
 		goto out_data;
 
 	ret = do_mount(kernel_dev, dir_name, kernel_type, flags, options);
+	pr_info("mb: %s(): do_mount(kernel_dev %s, dir_name %s, kernel_type %s, flags %lx, options %p) ret %d\n",
+			__func__, kernel_dev, dir_name, kernel_type, flags, options, ret);
 
 	kfree(options);
 out_data:
