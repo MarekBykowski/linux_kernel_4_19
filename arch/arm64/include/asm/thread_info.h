@@ -36,6 +36,7 @@ typedef unsigned long mm_segment_t;
 /*
  * low level task data that entry.S needs immediate access to.
  */
+/*mb: thread_info*/
 struct thread_info {
 	unsigned long		flags;		/* low level flags */
 	mm_segment_t		addr_limit;	/* address limit */

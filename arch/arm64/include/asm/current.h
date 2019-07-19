@@ -12,6 +12,7 @@ struct task_struct;
  * We don't use read_sysreg() as we want the compiler to cache the value where
  * possible.
  */
+/*mb: current*/
 static __always_inline struct task_struct *get_current(void)
 {
 	unsigned long sp_el0;

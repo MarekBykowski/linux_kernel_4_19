@@ -1,0 +1,11 @@
+menu "Marek Bykowski's testing modules"
+
+comment "Marek Bykowski's testing modules."
+
+config PROCESS_TASK 
+	tristate "Inspect processes running kernels"
+	default m
+	---help---
+		List tasks and see how current process is being found
+
+endmenu

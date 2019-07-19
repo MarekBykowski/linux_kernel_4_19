@@ -594,6 +594,7 @@ struct wake_q_node {
 	struct wake_q_node *next;
 };
 
+/*mb: task_struct -> thread_info */
 struct task_struct {
 #ifdef CONFIG_THREAD_INFO_IN_TASK
 	/*
