@@ -44,12 +44,23 @@ static int mm_exp_load(void){
 		unsigned long spsel, sp_el0, sp_el1;
 		asm volatile("mrs %0, spsel" : "=r" (spsel));
 		asm volatile("mrs %0, sp_el0" : "=r" (sp_el0));
+		asm volatile("mrs %0, sp" : "=r" (sp_el1));
 		/*
-		  reading sp_el1 throws undefined instruction
+		  reading sp_el1 throws undefined instruction. I can read it in EL2
+		  though:
 		  asm volatile("mrs %0, sp_el1" : "=r" (sp_el1));
 		  sp_el1 = read_sysreg(sp_el1);*/
-		pr_info("spsel %lx sp_el0 %lx sp_el1 %lx\n",
+
+		pr_info("spsel %lx sp_el0 %lx sp_el1 %lx-cannot read\n",
 				spsel, sp_el0, sp_el1);
+
+		asm volatile("mrs %0, sp_el0" : "=r" (sp_el0));
+		pr_info("sp_el0 %lx\n", sp_el0);
+		pr_info("current read from sp_el0 %px\n", (void*) current);
+
+		asm volatile("mrs %0, sp_el0" : "=r" (sp_el0));
+		pr_info("sp_el0 %lx\n", sp_el0);
+		pr_info("current read from sp_el0 %lx\n", (unsigned long) current);
 }
 #endif
 
