@@ -107,6 +107,12 @@
 		interrupt-parent = <&gic>;
 		ranges;
 
+		ccn@4000000000 {
+			compatible = "arm,ccn-512";
+			reg = <0x40 0x00000000 0 0x1000000>;
+			interrupts = <0 432 4>; /*464-32*/
+		};
+
 		syscon: syscon@8002000000 {
 			compatible = "axxia,axxia-syscon", "syscon";
 			reg = <0x80 0x02c00000 0 0x40000>;

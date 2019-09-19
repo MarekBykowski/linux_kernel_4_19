@@ -238,6 +238,9 @@ static void flush_smp_call_function_queue(bool warn_cpu_offline)
 		smp_call_func_t func = csd->func;
 		void *info = csd->info;
 
+		trace_printk("mb: %s() llist has funcs %pf to flush flags 0x%x\n",
+				__func__, func, csd->flags);
+
 		/* Do we wait until *after* callback? */
 		if (csd->flags & CSD_FLAG_SYNCHRONOUS) {
 			func(info);

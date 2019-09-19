@@ -84,6 +84,8 @@ static void remote_function(void *data)
 			return;
 	}
 
+	trace_printk("mb: %s(): (from %pf) tfc->func %pf\n",
+			__func__, (void*)_RET_IP_, tfc->func);
 	tfc->ret = tfc->func(tfc->info);
 }
 
@@ -239,6 +241,8 @@ static int event_function(void *info)
 		WARN_ON_ONCE(&cpuctx->ctx != ctx);
 	}
 
+	trace_printk("mb: %s(): (from %pf) efs->func %pf\n",
+			__func__, (void*)_RET_IP_, efs->func);
 	efs->func(event, cpuctx, ctx, efs->data);
 unlock:
 	perf_ctx_unlock(cpuctx, task_ctx);
@@ -266,6 +270,7 @@ static void event_function_call(struct perf_event *event, event_f func, void *da
 	}
 
 	if (!task) {
+		/*mb: no task meant "perf -a"*/
 		cpu_function_call(event->cpu, event_function, &efs);
 		return;
 	}
@@ -1480,6 +1485,9 @@ static enum event_type_t get_event_type(struct perf_event *event)
 	if (!ctx->task)
 		event_type |= EVENT_CPU;
 
+	trace_printk("mb: %s() (from %pf) event_type %s\n",
+			__func__, (void*) _RET_IP_,
+			event_type == 0x2 ? "EVENT_PINNED" : "EVENT_FLEXIBLE" );
 	return event_type;
 }
 
@@ -2004,6 +2012,8 @@ event_sched_out(struct perf_event *event,
 
 	perf_pmu_disable(event->pmu);
 
+	trace_printk("mb: %s() (from %pf) calls %pf\n",
+			__func__, (void*)_RET_IP_, event->pmu->del);
 	event->pmu->del(event, 0);
 	event->oncpu = -1;
 
@@ -2322,6 +2332,8 @@ group_sched_in(struct perf_event *group_event,
 	 * Schedule in siblings as one group (if any):
 	 */
 	for_each_sibling_event(event, group_event) {
+		trace_printk("mb: %s(): NEVER CALLED for_each_sibling_event event->pmu->name %s\n",
+				__func__, event->pmu->name);
 		if (event_sched_in(event, cpuctx, ctx)) {
 			partial_group = event;
 			goto group_error;
@@ -3241,6 +3253,13 @@ static int visit_groups_merge(struct perf_event_groups *groups, int cpu,
 
 	evt1 = perf_event_groups_first(groups, -1);
 	evt2 = perf_event_groups_first(groups, cpu);
+	
+	trace_printk("mb: %s() (from %pf) (evt1->pmu->name %s, cpu=-1) "
+				 "(evt2->pmu->name %s, cpu=%d)\n",
+		__func__, (void*) _RET_IP_,
+		evt1 ? evt1->pmu->name : NULL,
+		evt2 ? evt2->pmu->name : NULL,
+		cpu);
 
 	while (evt1 || evt2) {
 		if (evt1 && evt2) {
@@ -3254,11 +3273,18 @@ static int visit_groups_merge(struct perf_event_groups *groups, int cpu,
 			evt = &evt2;
 		}
 
+		trace_printk("mb: %s() (from %pf) calling func %pf\n",
+			__func__, (void*) _RET_IP_, func);
 		ret = func(*evt, data);
+		/* ret = 0, so it loops further*/
 		if (ret)
 			return ret;
 
 		*evt = perf_event_groups_next(*evt);
+		/*perf_event_groups_delete(groups, *evt);*/
+		
+		trace_printk("mb: after perf_event_groups_next evt->pmu->name %s\n",
+			*evt ? (*evt)->pmu->name : NULL);
 	}
 
 	return 0;
@@ -3380,6 +3406,8 @@ ctx_sched_in(struct perf_event_context *ctx,
 	 * First go through the list and put on any pinned groups
 	 * in order to give them the best chance of going on.
 	 */
+	trace_printk("mb: %s(): (from %pf) do I do pinned %x or flexbible %x?\n",
+			__func__, (void*) _RET_IP_,  is_active & EVENT_PINNED, is_active & EVENT_FLEXIBLE);
 	if (is_active & EVENT_PINNED)
 		ctx_pinned_sched_in(ctx, cpuctx);
 
@@ -3394,6 +3422,9 @@ static void cpu_ctx_sched_in(struct perf_cpu_context *cpuctx,
 {
 	struct perf_event_context *ctx = &cpuctx->ctx;
 
+	trace_printk("mb: %s() (from %pf) calls %pf(type=%s)\n",
+				__func__, (void*)_RET_IP_, ctx_sched_in,
+				event_type == 0x2 ? "EVENT_PINNED" : "EVENT_FLEXIBLE");
 	ctx_sched_in(ctx, cpuctx, event_type, task);
 }
 
@@ -4905,9 +4936,13 @@ static void perf_event_for_each_child(struct perf_event *event,
 	WARN_ON_ONCE(event->ctx->parent_ctx);
 
 	mutex_lock(&event->child_mutex);
+	trace_printk("mb: %s() calls %pf(%s)\n",
+		__func__, func, event->pmu->name);
 	func(event);
-	list_for_each_entry(child, &event->child_list, child_list)
+	list_for_each_entry(child, &event->child_list, child_list) {
+		trace_printk("mb: NEVER CALLED child->pmu->name %s\n", child->pmu->name);
 		func(child);
+	}
 	mutex_unlock(&event->child_mutex);
 }
 
@@ -5103,8 +5138,11 @@ static long _perf_ioctl(struct perf_event *event, unsigned int cmd, unsigned lon
 
 	if (flags & PERF_IOC_FLAG_GROUP)
 		perf_event_for_each(event, func);
-	else
+	else {
+		trace_printk("\nmb: %s() calls perf_event_for_each_child(%s,%pf)\n",
+			__func__, event->pmu->name, func);
 		perf_event_for_each_child(event, func);
+	}
 
 	return 0;
 }
@@ -9733,7 +9771,6 @@ static int perf_try_init_event(struct pmu *pmu, struct perf_event *event)
 {
 	struct perf_event_context *ctx = NULL;
 	int ret;
-
 	if (!try_module_get(pmu->module))
 		return -ENODEV;
 

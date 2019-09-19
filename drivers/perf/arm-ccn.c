@@ -121,6 +121,22 @@
 #define CCN_TYPE_RND_3P	0x1a
 #define CCN_TYPE_CYCLES	0xff /* Pseudotype */
 
+static const char *node_types[0x1f] = {
+    [CCN_TYPE_MN] = __stringify_1(CCN_TYPE_MN),
+    [CCN_TYPE_DT] = __stringify_1(CCN_TYPE_DT),
+    [CCN_TYPE_HNF] = __stringify_1(CCN_TYPE_HNF),
+    [CCN_TYPE_HNI] = __stringify_1(CCN_TYPE_HNI),
+    [CCN_TYPE_XP] = __stringify_1(CCN_TYPE_XP),
+    [CCN_TYPE_SBSX] = __stringify_1(CCN_TYPE_SBSX),
+    [CCN_TYPE_SBAS] = __stringify_1(CCN_TYPE_SBAS),
+    [CCN_TYPE_RNI_1P] = __stringify_1(CCN_TYPE_RNI_1P),
+    [CCN_TYPE_RNI_2P] = __stringify_1(CCN_TYPE_RNI_2P),
+    [CCN_TYPE_RNI_3P] = __stringify_1(CCN_TYPE_RNI_3P),
+    [CCN_TYPE_RND_1P] = __stringify_1(CCN_TYPE_RND_1P),
+    [CCN_TYPE_RND_2P] = __stringify_1(CCN_TYPE_RND_2P),
+    [CCN_TYPE_RND_3P] = __stringify_1(CCN_TYPE_RND_3P),
+};
+
 #define CCN_EVENT_WATCHPOINT 0xfe /* Pseudoevent */
 
 #define CCN_NUM_PMU_EVENTS		4
@@ -133,6 +149,33 @@
 #define CCN_IDX_MASK_EXACT		(CCN_NUM_PMU_EVENT_COUNTERS + 1)
 #define CCN_IDX_MASK_ORDER		(CCN_NUM_PMU_EVENT_COUNTERS + 2)
 #define CCN_IDX_MASK_OPCODE		(CCN_NUM_PMU_EVENT_COUNTERS + 3)
+
+#if DEBUG
+#define writel_trace(...) \
+	do { \
+		trace_printk("l:%d writel(%X,%px) from %pf\n", \
+			__LINE__, __VA_ARGS__, (void*) _RET_IP_); \
+		writel(__VA_ARGS__); \
+	} while (0)
+#define readl_trace(...) \
+	( { \
+		u64 _res = readl(__VA_ARGS__); \
+		trace_printk("l:%d %llx = readl(%px) from %pf\n", \
+				__LINE__, _res, __VA_ARGS__, (void*) _RET_IP_); \
+		_res;  \
+	} )
+#define readq_trace(...) \
+	( { \
+		u64 _res = readq(__VA_ARGS__); \
+		trace_printk("l:%d %llx = readl(%px) from %pf\n", \
+			__LINE__, _res, __VA_ARGS__, (void*) _RET_IP_); \
+		_res;  \
+	} )
+#else
+#define writel_trace(...) writel(__VA_ARGS__)
+#define readl_trace(...) ( { u64 _res = readl(__VA_ARGS__); _res; } )
+#define readq_trace(...) ( { u64 _res = readq(__VA_ARGS__); _res; } )
+#endif
 
 struct arm_ccn_component {
 	void __iomem *base;
@@ -904,8 +947,9 @@ static void arm_ccn_pmu_xp_dt_config(struct perf_event *event, int enable)
 	u32 val, dt_cfg;
 
 	/* Nothing to do for cycle counter */
-	if (hw->idx == CCN_IDX_PMU_CYCLE_COUNTER)
+	if (hw->idx == CCN_IDX_PMU_CYCLE_COUNTER) {
 		return;
+	}
 
 	if (CCN_CONFIG_TYPE(event->attr.config) == CCN_TYPE_XP)
 		xp = &ccn->xp[CCN_CONFIG_XP(event->attr.config)];
@@ -987,19 +1031,19 @@ static void arm_ccn_pmu_xp_watchpoint_config(struct perf_event *event)
 	writel(val, source->base + CCN_XP_DT_INTERFACE_SEL);
 
 	/* Comparison values */
-	writel(cmp_l & 0xffffffff, source->base + CCN_XP_DT_CMP_VAL_L(wp));
-	writel((cmp_l >> 32) & 0x7fffffff,
+	writel((unsigned)(cmp_l & 0xffffffff), source->base + CCN_XP_DT_CMP_VAL_L(wp));
+	writel((unsigned)((cmp_l >> 32) & 0x7fffffff),
 			source->base + CCN_XP_DT_CMP_VAL_L(wp) + 4);
-	writel(cmp_h & 0xffffffff, source->base + CCN_XP_DT_CMP_VAL_H(wp));
-	writel((cmp_h >> 32) & 0x0fffffff,
+	writel((unsigned)(cmp_h & 0xffffffff), source->base + CCN_XP_DT_CMP_VAL_H(wp));
+	writel((unsigned)((cmp_h >> 32) & 0x0fffffff),
 			source->base + CCN_XP_DT_CMP_VAL_H(wp) + 4);
 
 	/* Mask */
-	writel(mask_l & 0xffffffff, source->base + CCN_XP_DT_CMP_MASK_L(wp));
-	writel((mask_l >> 32) & 0x7fffffff,
+	writel((unsigned)(mask_l & 0xffffffff), source->base + CCN_XP_DT_CMP_MASK_L(wp));
+	writel((unsigned)((mask_l >> 32) & 0x7fffffff),
 			source->base + CCN_XP_DT_CMP_MASK_L(wp) + 4);
-	writel(mask_h & 0xffffffff, source->base + CCN_XP_DT_CMP_MASK_H(wp));
-	writel((mask_h >> 32) & 0x0fffffff,
+	writel((unsigned)(mask_h & 0xffffffff), source->base + CCN_XP_DT_CMP_MASK_H(wp));
+	writel((unsigned)((mask_h >> 32) & 0x0fffffff),
 			source->base + CCN_XP_DT_CMP_MASK_H(wp) + 4);
 }
 
@@ -1053,12 +1097,12 @@ static void arm_ccn_pmu_node_event_config(struct perf_event *event)
 		return;
 
 	/* Set the event id for the pre-allocated counter */
-	val = readl(source->base + CCN_HNF_PMU_EVENT_SEL);
+	val = readl_trace(source->base + CCN_HNF_PMU_EVENT_SEL);
 	val &= ~(CCN_HNF_PMU_EVENT_SEL__ID__MASK <<
 		CCN_HNF_PMU_EVENT_SEL__ID__SHIFT(hw->config_base));
 	val |= CCN_CONFIG_EVENT(event->attr.config) <<
 		CCN_HNF_PMU_EVENT_SEL__ID__SHIFT(hw->config_base);
-	writel(val, source->base + CCN_HNF_PMU_EVENT_SEL);
+	writel_trace(val, source->base + CCN_HNF_PMU_EVENT_SEL);
 }
 
 static void arm_ccn_pmu_event_config(struct perf_event *event)
@@ -1080,11 +1124,11 @@ static void arm_ccn_pmu_event_config(struct perf_event *event)
 
 	/* Set the DT bus "distance" register */
 	offset = (hw->idx / 4) * 4;
-	val = readl(ccn->dt.base + CCN_DT_ACTIVE_DSM + offset);
+	val = readl_trace(ccn->dt.base + CCN_DT_ACTIVE_DSM + offset);
 	val &= ~(CCN_DT_ACTIVE_DSM__DSM_ID__MASK <<
 			CCN_DT_ACTIVE_DSM__DSM_ID__SHIFT(hw->idx % 4));
 	val |= xp << CCN_DT_ACTIVE_DSM__DSM_ID__SHIFT(hw->idx % 4);
-	writel(val, ccn->dt.base + CCN_DT_ACTIVE_DSM + offset);
+	writel_trace(val, ccn->dt.base + CCN_DT_ACTIVE_DSM + offset);
 
 	if (CCN_CONFIG_TYPE(event->attr.config) == CCN_TYPE_XP) {
 		if (CCN_CONFIG_EVENT(event->attr.config) ==
@@ -1128,8 +1172,9 @@ static int arm_ccn_pmu_event_add(struct perf_event *event, int flags)
 
 	hw->state = PERF_HES_STOPPED;
 
-	if (flags & PERF_EF_START)
+	if (flags & PERF_EF_START) { /* start the counter when adding */
 		arm_ccn_pmu_event_start(event, PERF_EF_UPDATE);
+	}
 
 	return 0;
 }
@@ -1241,14 +1286,14 @@ static int arm_ccn_pmu_init(struct arm_ccn *ccn)
 	/* Initialize DT subsystem */
 	ccn->dt.base = ccn->base + CCN_REGION_SIZE;
 	spin_lock_init(&ccn->dt.config_lock);
-	writel(CCN_DT_PMOVSR_CLR__MASK, ccn->dt.base + CCN_DT_PMOVSR_CLR);
-	writel(CCN_DT_CTL__DT_EN, ccn->dt.base + CCN_DT_CTL);
-	writel(CCN_DT_PMCR__OVFL_INTR_EN | CCN_DT_PMCR__PMU_EN,
+	writel_trace(CCN_DT_PMOVSR_CLR__MASK, ccn->dt.base + CCN_DT_PMOVSR_CLR);
+	writel_trace(CCN_DT_CTL__DT_EN, ccn->dt.base + CCN_DT_CTL);
+	writel_trace(CCN_DT_PMCR__OVFL_INTR_EN | CCN_DT_PMCR__PMU_EN,
 			ccn->dt.base + CCN_DT_PMCR);
 	writel(0x1, ccn->dt.base + CCN_DT_PMSR_CLR);
 	for (i = 0; i < ccn->num_xps; i++) {
-		writel(0, ccn->xp[i].base + CCN_XP_DT_CONFIG);
-		writel((CCN_XP_DT_CONTROL__WP_ARM_SEL__ALWAYS <<
+		writel_trace(0, ccn->xp[i].base + CCN_XP_DT_CONFIG);
+		writel_trace((CCN_XP_DT_CONTROL__WP_ARM_SEL__ALWAYS <<
 				CCN_XP_DT_CONTROL__WP_ARM_SEL__SHIFT(0)) |
 				(CCN_XP_DT_CONTROL__WP_ARM_SEL__ALWAYS <<
 				CCN_XP_DT_CONTROL__WP_ARM_SEL__SHIFT(1)) |
@@ -1319,6 +1364,7 @@ static int arm_ccn_pmu_init(struct arm_ccn *ccn)
 	cpuhp_state_add_instance_nocalls(CPUHP_AP_PERF_ARM_CCN_ONLINE,
 					 &ccn->dt.node);
 	put_cpu();
+
 	return 0;
 
 error_pmu_register:
@@ -1381,21 +1427,27 @@ static int arm_ccn_for_each_valid_region(struct arm_ccn *ccn,
 static int arm_ccn_get_nodes_num(struct arm_ccn *ccn, int region,
 		void __iomem *base, u32 type, u32 id)
 {
-
-	if (type == CCN_TYPE_XP && id >= ccn->num_xps)
+	if (type == CCN_TYPE_XP && id >= ccn->num_xps) {
+		dev_dbg(ccn->dev, "ccn->num_xps before setting is %d\n",
+				ccn->num_xps);
 		ccn->num_xps = id + 1;
-	else if (id >= ccn->num_nodes)
+	} else if (id >= ccn->num_nodes) {
+		dev_dbg(ccn->dev, "ccn->num_xps before setting is %d\n",
+				ccn->num_xps);
 		ccn->num_nodes = id + 1;
+	}
 
 	return 0;
 }
+
 
 static int arm_ccn_init_nodes(struct arm_ccn *ccn, int region,
 		void __iomem *base, u32 type, u32 id)
 {
 	struct arm_ccn_component *component;
 
-	dev_dbg(ccn->dev, "Region %d: id=%u, type=0x%02x\n", region, id, type);
+	dev_dbg(ccn->dev, "Region %d: id=%u, type=0x%02x (%s)\n", region, id,
+		type, node_types[type]);
 
 	switch (type) {
 	case CCN_TYPE_MN:
