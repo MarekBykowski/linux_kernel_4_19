@@ -20,6 +20,13 @@ config ARM_CCI400_PORT_CTRL
 	  Low level power management driver for CCI400 cache coherent
 	  interconnect for ARM platforms.
 
+config ARM_CCN
+	bool "ARM CCN core"
+	depends on ARM_CCN_PMU
+	help
+	  The (core) driver of the ARM CCN (Cache Coherent Interconnect)
+	  managing the interrupts to its clients.
+
 config BRCMSTB_GISB_ARB
 	bool "Broadcom STB GISB bus arbiter"
 	depends on ARM || ARM64 || MIPS
