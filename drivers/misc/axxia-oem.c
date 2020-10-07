@@ -285,6 +285,11 @@ static const struct file_operations axxia_actlr_el2_proc_ops = {
 static int ccn_oem_available = 1;
 static unsigned long long ccn_phys_base;
 
+#include <linux/kvm_host.h>
+#include <asm/kvm_asm.h>
+#include <asm/kvm_arm.h>
+#include <asm/kvm_mmu.h>
+
 static int
 enable_ccn_access(void)
 {
@@ -294,6 +299,14 @@ enable_ccn_access(void)
 	unsigned int gpdma0_axprot_override;
 	unsigned int gpdma0_status;
 	int retries = 1000;
+
+
+	phys_addr_t addr = kvm_get_idmap_vector();
+	pr_info("mb: get phys_addr_t of hyp vector -> kvm_get_idmap_vector() %pa\n",
+		&addr);
+	__hyp_set_vectors(kvm_get_idmap_vector());
+	__test_kvm_call();
+	__cpu_init_stage2();
 
 	/*
 	  Update CCN 0, bit 0
@@ -833,6 +846,7 @@ axxia_oem_init(void)
 
 	__arm_smccc_smc(0xc3000006, 0xfe0, 0, 0, 0, 0, 0, 0, &res, NULL);
 
+	res.a0 = 1;
 	if (0 != res.a0) {
 		ccn_oem_available = 0;
 		rc = enable_ccn_access();

@@ -1312,8 +1312,15 @@ static void cpu_init_hyp_mode(void *dummy)
 	unsigned long hyp_stack_ptr;
 	unsigned long stack_page;
 	unsigned long vector_ptr;
+	phys_addr_t addr = kvm_get_idmap_vector();
+	kvm_info("mb: get phys_addr_t of hyp vector -> kvm_get_idmap_vector() %pa\n",
+		&addr);
 
 	/* Switch from the HYP stub to our own HYP init vector */
+	/*mb: switch from stub hyp vector to hyp vector */
+	kvm_info("mb: %s:%s() called from %pF\n",
+		__FILE__, __func__, (void *)_RET_IP_);
+
 	__hyp_set_vectors(kvm_get_idmap_vector());
 
 	pgd_ptr = kvm_mmu_get_httbr();
@@ -1323,6 +1330,7 @@ static void cpu_init_hyp_mode(void *dummy)
 
 	__cpu_init_hyp_mode(pgd_ptr, hyp_stack_ptr, vector_ptr);
 	__cpu_init_stage2();
+	__test_kvm_call();
 }
 
 static void cpu_hyp_reset(void)
@@ -1354,6 +1362,9 @@ static void cpu_hyp_reinit(void)
 
 static void _kvm_arch_hardware_enable(void *discard)
 {
+	int yesno = __this_cpu_read(kvm_arm_hardware_enabled);
+	kvm_info("mb: kvm_arm_hardware_enabled %d\n", yesno);
+
 	if (!__this_cpu_read(kvm_arm_hardware_enabled)) {
 		cpu_hyp_reinit();
 		__this_cpu_write(kvm_arm_hardware_enabled, 1);
@@ -1485,8 +1496,12 @@ static int init_subsystems(void)
 	kvm_coproc_table_init();
 
 out:
+	__test_kvm_call();
 	on_each_cpu(_kvm_arch_hardware_disable, NULL, 1);
 
+	kvm_info("mb:_kvm_arch_hardware_disable called\n");
+	__test_kvm_call();
+	__asm__ volatile("1: b 1b\n");
 	return err;
 }
 
@@ -1540,12 +1555,17 @@ static int init_hyp_mode(void)
 		goto out_err;
 	}
 
+	kvm_info("mb: %s: %s(): __hyp_text_start(kern) %lx kvm_ksym_ref(__hyp_text_start)(hyp) %lx\n",
+		 __FILE__, __func__,
+		 (unsigned long)__hyp_text_start, (unsigned long)kvm_ksym_ref(__hyp_text_start));
+
 	err = create_hyp_mappings(kvm_ksym_ref(__start_rodata),
 				  kvm_ksym_ref(__end_rodata), PAGE_HYP_RO);
 	if (err) {
 		kvm_err("Cannot map rodata section\n");
 		goto out_err;
 	}
+	kvm_info("mb: mapped rodata section\n");
 
 	err = create_hyp_mappings(kvm_ksym_ref(__bss_start),
 				  kvm_ksym_ref(__bss_stop), PAGE_HYP_RO);
@@ -1553,12 +1573,14 @@ static int init_hyp_mode(void)
 		kvm_err("Cannot map bss section\n");
 		goto out_err;
 	}
+	kvm_info("mb: mapped bss section\n");
 
 	err = kvm_map_vectors();
 	if (err) {
 		kvm_err("Cannot map vectors\n");
 		goto out_err;
 	}
+	kvm_info("mb: mapped vectors\n");
 
 	/*
 	 * Map the Hyp stack pages
@@ -1572,6 +1594,7 @@ static int init_hyp_mode(void)
 			kvm_err("Cannot map hyp stack\n");
 			goto out_err;
 		}
+		kvm_info("mb: mapped hyp stack\n");
 	}
 
 	for_each_possible_cpu(cpu) {
@@ -1584,11 +1607,14 @@ static int init_hyp_mode(void)
 			kvm_err("Cannot map host CPU state: %d\n", err);
 			goto out_err;
 		}
+		kvm_info("mb: mapped host CPU state\n");
 	}
 
 	err = hyp_map_aux_data();
 	if (err)
 		kvm_err("Cannot map host auxilary data: %d\n", err);
+
+	kvm_info("mb: mapped host auxilary data\n");
 
 	return 0;
 
@@ -1690,6 +1716,7 @@ int kvm_arch_init(void *opaque)
 	in_hyp_mode = is_kernel_in_hyp_mode();
 
 	if (!in_hyp_mode) {
+		kvm_info("mb: no kernel isn't in EL2\n");
 		err = init_hyp_mode();
 		if (err)
 			goto out_err;
@@ -1703,7 +1730,6 @@ int kvm_arch_init(void *opaque)
 		kvm_info("VHE mode initialized successfully\n");
 	else
 		kvm_info("Hyp mode initialized successfully\n");
-
 	return 0;
 
 out_hyp:

@@ -73,6 +73,7 @@ extern void __vgic_v3_init_lrs(void);
 extern u32 __kvm_get_mdcr_el2(void);
 
 extern u32 __init_stage2_translation(void);
+extern u64  kvm_run_in_el2(void);
 
 /* Home-grown __this_cpu_{ptr,read} variants that always work at HYP */
 #define __hyp_this_cpu_ptr(sym)						\

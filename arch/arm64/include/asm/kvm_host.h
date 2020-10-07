@@ -419,6 +419,9 @@ static inline void __cpu_init_hyp_mode(phys_addr_t pgd_ptr,
 	 * cpus_have_const_cap() wrapper.
 	 */
 	BUG_ON(!static_branch_likely(&arm64_const_caps_ready));
+	/* mb: calls to arch/arm64/kvm/hyp-init.S:__do_hyp_init():
+	 * - sets new vbar_el2
+	 */
 	__kvm_call_hyp((void *)pgd_ptr, hyp_stack_ptr, vector_ptr, tpidr_el2);
 
 	/*
@@ -465,9 +468,20 @@ int kvm_arm_vcpu_arch_has_attr(struct kvm_vcpu *vcpu,
 static inline void __cpu_init_stage2(void)
 {
 	u32 parange = kvm_call_hyp(__init_stage2_translation);
+	pr_info("mb: %s:%s(): parange %x\n",
+		__FILE__, __func__, parange);
 
 	WARN_ONCE(parange < 40,
 		  "PARange is %d bits, unsupported configuration!", parange);
+}
+
+/*u64 __hyp_text kvm_run_in_el2(void)*/
+static inline void __test_kvm_call(void)
+{
+	u64 ret;
+	pr_info("mb: testing kvm call\n");
+	ret = kvm_call_hyp(kvm_run_in_el2);
+	pr_info("mb: after testing kvm call %llx\n", ret);
 }
 
 /* Guest/host FPSIMD coordination helpers */

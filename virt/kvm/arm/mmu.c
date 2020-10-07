@@ -16,6 +16,8 @@
  * Foundation, 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#define DEBUG
+
 #include <linux/mman.h>
 #include <linux/kvm_host.h>
 #include <linux/io.h>
@@ -41,7 +43,7 @@ static DEFINE_MUTEX(kvm_hyp_pgd_mutex);
 
 static unsigned long hyp_idmap_start;
 static unsigned long hyp_idmap_end;
-static phys_addr_t hyp_idmap_vector;
+/*static*/ phys_addr_t hyp_idmap_vector;
 
 static unsigned long io_map_base;
 
@@ -1971,6 +1973,8 @@ int kvm_mmu_init(void)
 	hyp_idmap_end = kvm_virt_to_phys(__hyp_idmap_text_end);
 	hyp_idmap_end = ALIGN(hyp_idmap_end, PAGE_SIZE);
 	hyp_idmap_vector = kvm_virt_to_phys(__kvm_hyp_init);
+
+	kvm_info("mb: my new hyp vector will be at %pa\n", &hyp_idmap_vector);
 
 	/*
 	 * We rely on the linker script to ensure at build time that the HYP
