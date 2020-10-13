@@ -1314,13 +1314,23 @@ static void cpu_init_hyp_mode(void *dummy)
 	unsigned long vector_ptr;
 
 	/* Switch from the HYP stub to our own HYP init vector */
+
+	/* mb: init vector ./arch/arm64/kvm/hyp-init.S:__kvm_hyp_init
+	 * you don't call to it (HVC) again after running __kvm_hyp_init
+	 * (below)
+	 */
 	__hyp_set_vectors(kvm_get_idmap_vector());
 
 	pgd_ptr = kvm_mmu_get_httbr();
 	stack_page = __this_cpu_read(kvm_arm_hyp_stack_page);
 	hyp_stack_ptr = stack_page + PAGE_SIZE;
+	/* move or not the vector depending on the caps */
 	vector_ptr = (unsigned long)kvm_get_hyp_vector();
 
+	/* mb: calls (HVC) to ./arch/arm64/kvm/hyp-init.S:__do_hyp_init:
+	 * - sctlr_el2.M set
+	 * - vbar_el2 updated on the caps
+	 */
 	__cpu_init_hyp_mode(pgd_ptr, hyp_stack_ptr, vector_ptr);
 	__cpu_init_stage2();
 }

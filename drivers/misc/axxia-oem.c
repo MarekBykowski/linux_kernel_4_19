@@ -222,102 +222,123 @@ static const struct file_operations axxia_actlr_el2_proc_ops = {
  * CCN Access
  */
 
-#define DMA_X_SRC_COUNT                                0x00
-#define DMA_Y_SRC_COUNT                                0x04
-#define DMA_X_MODIF_SRC                                0x08
-#define DMA_Y_MODIF_SRC                                0x0c
-#define DMA_SRC_CUR_ADDR                       0x10
-#define DMA_SRC_ACCESS                         0x14
-#define    DMA_SRC_ACCESS_TAIL_LENGTH(x)       (((x) & 0xf) << 11)
-#define    DMA_SRC_ACCESS_SRC_MASK_LENGTH(x)   (((x) & 0x1f) << 6)
-#define    DMA_SRC_ACCESS_SRC_SIZE(x)          (((x) & 7) << 3)
-#define    DMA_SRC_ACCESS_SRC_BURST(x)         (((x) & 7) << 0)
-#define DMA_SRC_MASK                           0x18
-#define DMA_X_DST_COUNT                                0x1c
-#define DMA_Y_DST_COUNT                                0x20
-#define DMA_X_MODIF_DST                                0x24
-#define DMA_DST_CUR_ADDR                       0x2c
-#define DMA_DST_ACCESS                         0x30
-#define    DMA_DST_ACCESS_DST_SIZE(x)          (((x) & 7) << 3)
-#define    DMA_DST_ACCESS_DST_BURST(x)         (((x) & 7) << 0)
-#define DMA_CHANNEL_CONFIG                     0x38
-#define    DMA_CONFIG_DST_SPACE(x)             (((x) & 7) << 26)
-#define    DMA_CONFIG_SRC_SPACE(x)             (((x) & 7) << 23)
-#define    DMA_CONFIG_PRIORITY_ROW             (1<<21)
-#define    DMA_CONFIG_PRIORITY                 (1<<20)
-#define    DMA_CONFIG_CH_FULL_PRIORITY          (1<<19)
-#define    DMA_CONFIG_LAST_BLOCK               (1<<15)
-#define    DMA_CONFIG_CLEAR_FIFO               (1<<14)
-#define    DMA_CONFIG_START_MEM_LOAD           (1<<13)
-#define    DMA_CONFIG_STOP_DST_EOB             (1<<11)
-#define    DMA_CONFIG_FULL_DESCR_ADDR          (1<<8)
-#define    DMA_CONFIG_INT_DST_EOT              (1<<7)
-#define    DMA_CONFIG_INT_DST_EOB              (1<<6)
-#define    DMA_CONFIG_WAIT_FOR_TASK_CNT2       (1<<5)
-#define    DMA_CONFIG_TASK_CNT2_RESET          (1<<4)
-#define    DMA_CONFIG_WAIT_FOR_TASK_CNT1       (1<<3)
-#define    DMA_CONFIG_TASK_CNT1_RESET          (1<<2)
-#define    DMA_CONFIG_TX_EN                    (1<<1)
-#define    DMA_CONFIG_CHAN_EN                  (1<<0)
-#define DMA_STATUS                             0x3c
-#define    DMA_STATUS_WAIT_TASK_CNT2           (1<<20)
-#define    DMA_STATUS_TASK_CNT2_OVERFLOW       (1<<19)
-#define    DMA_STATUS_WAIT_TASK_CNT1           (1<<18)
-#define    DMA_STATUS_TASK_CNT1_OVERFLOW       (1<<17)
-#define    DMA_STATUS_CH_PAUS_WR_EN            (1<<16)
-#define    DMA_STATUS_ERR_ACC_DESCR            (1<<14)
-#define    DMA_STATUS_ERR_ACC_DST              (1<<13)
-#define    DMA_STATUS_ERR_ACC_SRC              (1<<12)
-#define    DMA_STATUS_ERR_OVERFLOW             (1<<9)
-#define    DMA_STATUS_ERR_UNDERFLOW            (1<<8)
-#define    DMA_STATUS_CH_PAUSE                 (1<<7)
-#define    DMA_STATUS_CH_WAITING               (1<<5)
-#define    DMA_STATUS_CH_ACTIVE                        (1<<4)
-#define    DMA_STATUS_TR_COMPLETE              (1<<3)
-#define    DMA_STATUS_BLK_COMPLETE             (1<<2)
-#define    DMA_STATUS_UNALIGNED_READ           (1<<1)
-#define    DMA_STATUS_UNALIGNED_WRITE          (1<<0)
-#define    DMA_STATUS_UNALIGNED_ERR            (DMA_STATUS_UNALIGNED_READ | \
-                                                DMA_STATUS_UNALIGNED_WRITE)
-#define DMA_SRC_ADDR_SEG                       0x54
-#define DMA_DST_ADDR_SEG                       0x58
+#include <linux/kvm_host.h>
+#include <asm/kvm_hyp.h>
+#include <asm/kvm_asm.h>
+#include <asm/kvm_arm.h>
+#include <asm/kvm_mmu.h>
+#include <linux/string.h> /* for macro */
+#include "axxia-oem.h"
+
+/* Helper macro */
+#define is_gpdma_success(str)						\
+	({								\
+		__label__ __out;					\
+		void __iomem *__ccn_sec = NULL;				\
+		bool __is_suc = false;					\
+		unsigned long __value;					\
+									\
+		if (of_find_compatible_node(NULL, NULL,			\
+					    "axxia,axc6732"))		\
+			goto __out;					\
+		else if (of_find_compatible_node(NULL, NULL,		\
+						 "axxia,axm5616"))	\
+			__ccn_sec = ioremap(0x8000000000, PAGE_SIZE);	\
+		__value = readl(__ccn_sec);				\
+		if (1 == (__value & 1)) {				\
+			__is_suc = true;				\
+			if (0 == strcmp(__stringify(str), "dbg"))	\
+				pr_info("GPDMA0: wrote %lx @CCN.secure_access\n", \
+					__value);			\
+		}							\
+									\
+		iounmap(__ccn_sec);					\
+__out:									\
+		__is_suc;						\
+	})
 
 static int ccn_oem_available = 1;
 static unsigned long long ccn_phys_base;
 
-static int
-enable_ccn_access(void)
+/* Used in EL2 so needs be global */
+void __iomem *gpdma0;
+void __iomem *mmap_scb;
+
+static unsigned int *value;
+static bool force_via_gpdma;
+static bool run_at_el2;
+
+int map_periph_el1(void)
 {
-	unsigned long *value;
-	void __iomem *gpdma0;
-	void __iomem *mmap_scb;
-	unsigned int gpdma0_axprot_override;
-	unsigned int gpdma0_status;
-	int retries = 1000;
-
-	/*
-	  Update CCN 0, bit 0
-	*/
-
-	/*
-	  Map Addresses
-	*/
-
 	if (of_find_compatible_node(NULL, NULL, "axxia,axc6732")) {
 		gpdma0 = ioremap(0x8005020000, SZ_64K);
 	} else if (of_find_compatible_node(NULL, NULL, "axxia,axm5616")) {
 		gpdma0 = ioremap(0x8004120000, SZ_64K);
 	} else {
 		pr_err("Only Valid for Axxia 6700 and 5600!\n");
-
-		return -EFAULT;
 	}
+	if (!gpdma0)
+		return -EIO;
 
 	mmap_scb = ioremap(0x8032000000, SZ_512K);
+	if (!mmap_scb)
+		return -EIO;
+
+	value = kmalloc(sizeof(unsigned long), GFP_ATOMIC);
+	if (!value)
+		return -ENOMEM;
+
+	*value = 1;
+	pr_debug("GPDMA0: mem write %u @0x%lx (PA) to be DMA'ed to CCN.sec\n",
+		 *value, (unsigned long)virt_to_phys(value));
+
+	return 0;
+}
+
+int map_periph_el2(void)
+{
+	unsigned int ret;
+
+	ret = create_hyp_mappings((void *)gpdma0,
+			(void *)(gpdma0 + SZ_64K), PAGE_HYP_DEVICE);
+	if (ret)
+		return ret;
+
+	ret = create_hyp_mappings((void *)mmap_scb,
+			(void *)(mmap_scb + SZ_512K), PAGE_HYP_DEVICE);
+	if (ret)
+		return ret;
+
+	ret = create_hyp_mappings((void *)value,
+			(void *)(value + 1), PAGE_HYP);
+	if (ret)
+		return ret;
+
+	kvm_flush_dcache_to_poc(value, PAGE_SIZE);
+
+	return ret;
+}
+
+void unmap_periph(void)
+{
+	if (gpdma0)
+		iounmap(gpdma0);
+	if (mmap_scb)
+		iounmap(mmap_scb);
+	kfree(value);
+}
+
+static int
+enable_ccn_access(void)
+{
+	unsigned long *value;
+	unsigned int gpdma0_axprot_override, gpdma0_offset;
+	unsigned int gpdma0_status;
+	int retries = 1000;
 
 	/*
-	  Input for the DMA Transfer
-	*/
+	 * Update CCN 0, bit 0
+	 */
 
 	value = kmalloc(sizeof(unsigned long), GFP_ATOMIC);
 
@@ -332,11 +353,7 @@ enable_ccn_access(void)
 	gpdma0_status = readl(gpdma0 + DMA_STATUS);
 
 	if (0 != (gpdma0_status & DMA_STATUS_CH_ACTIVE)) {
-		iounmap(mmap_scb);
-		iounmap(gpdma0);
-		kfree(value);
 		pr_err("Error Reading DMA_STATUS!\n");
-
 		return -1;
 	}
 
@@ -344,9 +361,18 @@ enable_ccn_access(void)
 	writel((DMA_STATUS_TR_COMPLETE | DMA_STATUS_BLK_COMPLETE),
                gpdma0 + DMA_STATUS);
 
+	if (of_find_compatible_node(NULL, NULL, "axxia,axc6732")) {
+		gpdma0_offset = 0x45800;
+	} else if (of_find_compatible_node(NULL, NULL, "axxia,axm5616")) {
+		gpdma0_offset = 0x48800;
+	} else {
+		pr_err("Internal Error!\n");
+		return -EIO;
+	}
+
 	/* Set gpdma0_axprot_override to secure or non-secure. */
-	gpdma0_axprot_override = readl(mmap_scb + 0x48800);
-	writel(2, mmap_scb + 0x48800);
+	gpdma0_axprot_override = readl(mmap_scb + gpdma0_offset);
+	writel(2, mmap_scb + gpdma0_offset);
 
 	/* Destination is 0x80_0000_0000 */
 	writel(0x80, (gpdma0 + DMA_DST_ADDR_SEG));
@@ -395,20 +421,12 @@ enable_ccn_access(void)
 	}
 
 	/* Restore gpdma0_axprot_override. */
-	writel(gpdma0_axprot_override, (mmap_scb + 0x48800));
+	writel(gpdma0_axprot_override, mmap_scb + gpdma0_offset);
 
 	if (0 >= retries) {
-		iounmap(mmap_scb);
-		iounmap(gpdma0);
-		kfree(value);
 		pr_err("gpdma_xfer timed out\n");
-
 		return -EFAULT;
 	}
-
-	iounmap(mmap_scb);
-	iounmap(gpdma0);
-	kfree(value);
 
 	return 0;
 }
@@ -829,16 +847,73 @@ axxia_oem_init(void)
 	  If OEM access is not avialable, try to enable non-secure
 	  access by setting bit 0 of CCN offset 0 (the 'secure_acces'
 	  bit).  See enable_ccn_access() above for details.
+
+	  -3-
+	  If #2 unseccessful, try #2 but at EL2/Hyp execution level
+	  as opssosed to EL1 the Linux kernel runs at.
 	*/
 
 	__arm_smccc_smc(0xc3000006, 0xfe0, 0, 0, 0, 0, 0, 0, &res, NULL);
 
-	if (0 != res.a0) {
-		ccn_oem_available = 0;
-		rc = enable_ccn_access();
+	if (0 != res.a0 || true == force_via_gpdma) {
+		if (of_find_compatible_node(NULL, NULL, "axxia,axc6732")) {
+			rc = -EPERM;
+			goto out;
+		}
 
-		if (rc)
+		ccn_oem_available = 0;
+
+		rc = map_periph_el1();
+		if (rc) {
+			pr_err("Cannot map GPDMA and/or SCB in EL1\n");
+			goto out;
+		}
+
+		/*
+		 * Try first EL1, if failure EL2.
+		 * 'run_at_el2 = true' forces EL2.
+		 */
+
+		if (false == run_at_el2) {
+			rc = enable_ccn_access();
+			if (!is_gpdma_success()) {
+				run_at_el2 = true;
+				rc = map_periph_el2();
+				if (rc) {
+					pr_err("Cannot map GPDMA and/or SCB in EL2\n");
+					goto out;
+				}
+			}
+		} else {
+			rc = map_periph_el2();
+			if (rc) {
+				pr_err("Cannot map GPDMA and/or SCB in EL2\n");
+				goto out;
+			}
+		}
+
+		if (run_at_el2) {
+			preempt_disable();
+			kvm_arch_hardware_enable();
+			rc = kvm_call_hyp(__enable_ccn_access,
+					  virt_to_phys(value));
+			kvm_arch_hardware_disable();
+			preempt_enable();
+		}
+
+out:
+		unmap_periph();
+
+		if (is_gpdma_success()) {
+			pr_info("Successfully Enabled CCN Access via GPDMA at %s\n",
+				false == run_at_el2 ? "EL1" : "EL2");
+		} else if (!rc) {
+			pr_info("Successfully ran 'GPDMA' WorkAround at %s ",
+				false == run_at_el2 ? "EL1" : "EL2");
+			pr_cont("but wasn't able to Enable Access!\n");
+		} else {
 			pr_err("Unable to Enable CCN Access via GPDMA!\n");
+		}
 	}
 
 	if (!rc)

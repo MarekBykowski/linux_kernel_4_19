@@ -435,6 +435,11 @@ extern int __kvm_harden_el2_vector_slot;
 static inline void *kvm_get_hyp_vector(void)
 {
 	struct bp_hardening_data *data = arm64_get_bp_hardening_data();
+
+	/*
+	 * The real TRUE hyp vector
+	 * arch/arm64/kvm/hyp/hyp-entry.S:__kvm_hyp_vector()
+	 */
 	void *vect = kern_hyp_va(kvm_ksym_ref(__kvm_hyp_vector));
 	int slot = -1;
 

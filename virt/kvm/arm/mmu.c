@@ -570,6 +570,7 @@ void free_hyp_pgds(void)
 	id_pgd = boot_hyp_pgd ? boot_hyp_pgd : hyp_pgd;
 
 	if (id_pgd) {
+		pr_info("mb: id_pgd\n");
 		/* In case we never called hyp_mmu_init() */
 		if (!io_map_base)
 			io_map_base = hyp_idmap_start;
@@ -583,6 +584,7 @@ void free_hyp_pgds(void)
 	}
 
 	if (hyp_pgd) {
+		pr_info("mb: hyp_pgd\n");
 		unmap_hyp_range(hyp_pgd, kern_hyp_va(PAGE_OFFSET),
 				(uintptr_t)high_memory - PAGE_OFFSET);
 

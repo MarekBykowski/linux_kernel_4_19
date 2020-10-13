@@ -74,6 +74,11 @@ extern u32 __kvm_get_mdcr_el2(void);
 
 extern u32 __init_stage2_translation(void);
 
+/* EL2 routines are a special compilation unit */
+extern void __iomem *gpdma0;
+extern void __iomem *mmap_scb;
+extern u32 __enable_ccn_access(unsigned int phys_addr);
+
 /* Home-grown __this_cpu_{ptr,read} variants that always work at HYP */
 #define __hyp_this_cpu_ptr(sym)						\
 	({								\
