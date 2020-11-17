@@ -1,0 +1,67 @@
+/dts-v1/;
+/ {
+    description = "multi.fit";
+    #address-cells = <1>;
+
+    images {
+        kernel {
+            description = "Linux Kernel";
+            data = /incbin/("vmlinux.bin.gz");
+            type = "kernel";
+            arch = "arm64";
+            os = "linux";
+            compression = "gzip";
+            load = <0x80000>;
+            entry = <0x80000>;
+            hash1 {
+                algo = "crc32";
+            };
+            hash2 {
+                algo = "sha1";
+            };
+        };
+
+        fdt {
+            description = "Flattened Device Tree blob";
+            data = /incbin/("arch/arm64/boot/dts/intel/axm5616-victoria.dtb");
+            type = "flat_dt";
+            arch = "arm64";
+            compression = "none";
+            hash1 {
+                algo = "crc32";
+            };
+            hash2 {
+                algo = "sha1";
+            };
+        };
+
+        ramdisk {
+            description = "ramdisk";
+            /*data = /incbin/("./axxia-image-small-axxiaarm64-20190523121650.rootfs.tar.gz");*/
+            /*data = /incbin/("./core-image-minimal-axxiaarm64-20190523120840.rootfs.cpio.gz");*/
+			/*data = /incbin/("./image.cpio.gz");*/
+			/*data = /incbin/("./imagefile.img");*/
+			data = /incbin/("./ramdisk.img.gz");
+            type = "ramdisk";
+            arch = "arm64";
+            os = "linux";
+            compression = "gzip";
+            load = <00000000>;
+            entry = <00000000>;
+            hash {
+                algo = "crc32";
+            };
+        };
+    };
+
+
+    configurations {
+        default = "conf";
+        conf {
+            description = "multi.fit for X9";
+            kernel = "kernel";
+            fdt = "fdt";
+			ramdisk = "ramdisk";
+        };
+    };
+};
