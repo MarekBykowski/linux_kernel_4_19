@@ -5,6 +5,7 @@
  * in the handler with container_of().
  */
 #include <linux/module.h>
+#include <linux/sched.h>
 #include <linux/workqueue.h>
 #include <linux/slab.h>
 #include <linux/delay.h>
