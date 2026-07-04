@@ -5,4 +5,4 @@ config PROCESS_TASK
 	  The kernel_addr module walks the VMAs of the process given by
 	  pid_mem= and prints its code/data/stack segments, to be compared
 	  against the process's own view printed by the user_addr tool
-	  from tools/mb_vma_lab.
+	  in the same directory.
