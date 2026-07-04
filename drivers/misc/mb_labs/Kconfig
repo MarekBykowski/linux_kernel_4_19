@@ -1,0 +1,49 @@
+menu "Marek Bykowski's kernel labs"
+
+source "drivers/misc/mb_labs/mb_vma_lab/Kconfig"
+
+config MB_LAB_PROCFS
+	tristate "procfs lab: boolean knob at /proc/my_bool"
+	default m
+	help
+	  Creates /proc/my_bool with read and write handlers. Exercises
+	  proc_create(), copy_to_user() and kstrtoint_from_user().
+
+config MB_LAB_COMPLETION
+	tristate "completion lab: wait for a worker kthread"
+	default m
+	help
+	  Starts a kthread and blocks in wait_for_completion() until the
+	  worker signals complete().
+
+config MB_LAB_WAITQUEUE
+	tristate "waitqueue lab: producer/consumer"
+	default m
+	help
+	  A consumer kthread sleeps in wait_event() until a producer
+	  kthread sets the condition and calls wake_up().
+
+config MB_LAB_WORKQUEUE
+	tristate "workqueue lab: deferred work on an own workqueue"
+	default m
+	help
+	  Allocates a dedicated workqueue and queues a work item embedded
+	  in an object, recovered in the handler via container_of().
+
+config MB_LAB_RADIX_TREE
+	tristate "radix tree lab: sparse array of pointers"
+	default m
+	help
+	  Stores pointers at sparse indices (including a billion) and
+	  iterates the tree. The XArray that replaced the radix tree in
+	  v4.20 offers the same semantics.
+
+config MB_LAB_RCU
+	tristate "rcu lab: lockless reader vs pointer-swapping writer"
+	default m
+	help
+	  A reader kthread dereferences a shared pointer under
+	  rcu_read_lock() while a writer kthread replaces it with
+	  rcu_assign_pointer() and reclaims via synchronize_rcu().
+
+endmenu

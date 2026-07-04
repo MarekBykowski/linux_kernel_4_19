@@ -1,0 +1,8 @@
+config PROCESS_TASK
+	tristate "vma lab: kernel vs userspace view of an address space"
+	default m
+	help
+	  The kernel_addr module walks the VMAs of the process given by
+	  pid_mem= and prints its code/data/stack segments, to be compared
+	  against the process's own view printed by the user_addr tool
+	  from tools/mb_vma_lab.
