@@ -10,6 +10,9 @@
 			arm,v2m-memory-map = "rs2";
 
 			iofpga@3,00000000 {
+				/* widen the CS3 window so virtio@200000 translates */
+				ranges = <0 3 0 0x210000>;
+
 				virtio-p9@140000 {
 					compatible = "virtio,mmio";
 					reg = <0x140000 0x200>;
