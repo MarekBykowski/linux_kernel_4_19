@@ -1,4 +1,4 @@
-obj-y	+= mb_vma_lab/
+obj-y	+= vma_lab/
 
 obj-$(CONFIG_MB_LAB_PROCFS)	+= procfs_lab.o
 obj-$(CONFIG_MB_LAB_COMPLETION)	+= completion_lab.o

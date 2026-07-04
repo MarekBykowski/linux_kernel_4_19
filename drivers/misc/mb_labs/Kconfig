@@ -1,6 +1,6 @@
 menu "Marek Bykowski's kernel labs"
 
-source "drivers/misc/mb_labs/mb_vma_lab/Kconfig"
+source "drivers/misc/mb_labs/vma_lab/Kconfig"
 
 config MB_LAB_PROCFS
 	tristate "procfs lab: boolean knob at /proc/my_bool"
