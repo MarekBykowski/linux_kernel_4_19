@@ -4,7 +4,7 @@ CFLAGS ?= -g
 all: user_addr
 
 user_addr: user_addr.c
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) $< -o $@
 
 .PHONY: all clean
 clean:
