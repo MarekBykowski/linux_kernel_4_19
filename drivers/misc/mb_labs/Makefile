@@ -14,4 +14,5 @@ obj-$(CONFIG_MB_LAB_PTWALK)	+= ptwalk_lab.o
 obj-$(CONFIG_MB_LAB_KPROBE)	+= kprobe_lab.o
 obj-$(CONFIG_MB_LAB_SEQLOCK)	+= seqlock_lab.o
 obj-$(CONFIG_MB_LAB_SYSREG)	+= sysreg_lab.o
+obj-$(CONFIG_MB_LAB_IPI)	+= ipi_lab.o
 obj-$(CONFIG_MB_LAB_HRTIMER)	+= hrtimer_lab.o

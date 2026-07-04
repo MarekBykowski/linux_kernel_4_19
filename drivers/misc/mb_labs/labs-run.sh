@@ -54,6 +54,16 @@ run_lab kprobe_lab trigger_opens
 run_lab mmap_lab user_mmap
 run_lab seqlock_lab
 run_lab sysreg_lab poke_sysregs
+
+echo "=== ipi_lab ==="
+dmesg -c >/dev/null
+echo "before: $(grep 'Function call' /proc/interrupts)"
+modprobe ipi_lab cpu=3
+echo "after:  $(grep 'Function call' /proc/interrupts)"
+rmmod ipi_lab
+dmesg
+echo
+
 run_lab hrtimer_lab
 
 echo "=== vma_lab ==="
