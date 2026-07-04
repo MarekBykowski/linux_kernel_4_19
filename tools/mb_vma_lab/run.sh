@@ -1,5 +1,5 @@
 #!/bin/sh
-# Run the mb_tests exercise: start the userspace probe, then inspect
+# Run the mb-vma-lab exercise: start the userspace probe, then inspect
 # the same process from the kernel via the kernel_addr module.
 
 rmmod kernel_addr 2>/dev/null
