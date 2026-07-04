@@ -1,6 +1,16 @@
-#!/bin/bash
+#!/bin/sh
+# Run the mb_tests exercise: start the userspace probe, then inspect
+# the same process from the kernel via the kernel_addr module.
 
-rmmod kernel_addr
+rmmod kernel_addr 2>/dev/null
 dmesg -C
-insmod ./kernel_addr.ko
+
+user_addr &
+PID=$!
+sleep 1
+
+modprobe kernel_addr pid_mem=$PID
 dmesg
+
+kill $PID
+rmmod kernel_addr

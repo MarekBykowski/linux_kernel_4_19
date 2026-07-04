@@ -1,19 +1,11 @@
-GCC=gcc 
-GCCFLAGS=-g
-
-OBJS=user_addr.o
-
-SRCS = $(OBJS:.o=.c)
+CC ?= gcc
+CFLAGS ?= -g
 
 all: user_addr
 
-$(OBJS): $(SRCS)
-	$(GCC) $(GCCFLAGS) -c $(SRCS)
+user_addr: user_addr.c
+	$(CC) $(CFLAGS) $< -o $@
 
-main: $(OBJS) 
-	$(GCC) $(GCCFLAGS) $(OBJS) -o $@
-
-.PHONY: clean
+.PHONY: all clean
 clean:
-	find ./ -name "*.o" -exec rm {} \;
-	rm -rf user_addr
+	rm -f user_addr *.o
