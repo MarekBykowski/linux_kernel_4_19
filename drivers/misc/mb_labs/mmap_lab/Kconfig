@@ -1,0 +1,8 @@
+config MB_LAB_MMAP
+	tristate "mmap lab: share a kernel page with userspace"
+	default m
+	help
+	  A misc device whose .mmap remaps a kernel page into the calling
+	  process with remap_pfn_range(). The user_mmap tool in the same
+	  directory maps it, reads the kernel's message and writes one
+	  back through the shared physical page.

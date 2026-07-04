@@ -1,6 +1,7 @@
 menu "Marek Bykowski's kernel labs"
 
 source "drivers/misc/mb_labs/vma_lab/Kconfig"
+source "drivers/misc/mb_labs/mmap_lab/Kconfig"
 
 config MB_LAB_PROCFS
 	tristate "procfs lab: boolean knob at /proc/my_bool"
@@ -45,5 +46,66 @@ config MB_LAB_RCU
 	  A reader kthread dereferences a shared pointer under
 	  rcu_read_lock() while a writer kthread replaces it with
 	  rcu_assign_pointer() and reclaims via synchronize_rcu().
+
+config MB_LAB_LOCKING
+	tristate "locking lab: spinlock vs mutex contention"
+	default m
+	help
+	  Kthreads hammer shared counters under a spinlock and a mutex.
+	  Load with sleep_in_atomic=1 to sleep under the spinlock and let
+	  CONFIG_DEBUG_ATOMIC_SLEEP call out the bug.
+
+config MB_LAB_LOCKDEP
+	tristate "lockdep lab: ABBA ordering caught by PROVE_LOCKING"
+	default m
+	help
+	  Takes two mutexes in A->B then B->A order. With
+	  CONFIG_PROVE_LOCKING lockdep prints a circular-dependency splat
+	  even though no deadlock actually occurs.
+
+config MB_LAB_ATOMICS
+	tristate "atomics lab: lost updates with plain int vs atomic_t"
+	default m
+	help
+	  Two kthreads increment a plain int and an atomic_t a million
+	  times each; the plain counter visibly loses updates on SMP.
+
+config MB_LAB_PTWALK
+	tristate "page-table walk lab: resolve a user VA by hand"
+	default m
+	help
+	  Walks pgd -> pud -> pmd -> pte for a target process's
+	  start_code and start_stack, printing each level, the physical
+	  address and the PTE attribute bits.
+
+config MB_LAB_KPROBE
+	tristate "kprobes lab: probe do_sys_open on a live kernel"
+	default m
+	help
+	  Registers a kprobe on do_sys_open() and logs the first few
+	  hits with the opener's comm; prints the total on unload.
+
+config MB_LAB_SEQLOCK
+	tristate "seqlock lab: lockless readers that retry"
+	default m
+	help
+	  A writer updates a two-field value under write_seqlock() while
+	  a lockless reader retries on read_seqretry(), never observing
+	  a torn read.
+
+config MB_LAB_SYSREG
+	tristate "sysreg lab: arm64 system registers in procfs"
+	default m
+	help
+	  Reads MIDR_EL1, MPIDR_EL1, CNTVCT_EL0, CNTFRQ_EL0 and
+	  CurrentEL with mrs and presents them decoded at
+	  /proc/mb_sysregs.
+
+config MB_LAB_HRTIMER
+	tristate "hrtimer lab: periodic timer with jitter measurement"
+	default m
+	help
+	  Arms a 100 ms periodic hrtimer that re-arms itself with
+	  hrtimer_forward_now() and reports each expiry's jitter.
 
 endmenu

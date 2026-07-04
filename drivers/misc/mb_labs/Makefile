@@ -1,4 +1,5 @@
 obj-y	+= vma_lab/
+obj-y	+= mmap_lab/
 
 obj-$(CONFIG_MB_LAB_PROCFS)	+= procfs_lab.o
 obj-$(CONFIG_MB_LAB_COMPLETION)	+= completion_lab.o
@@ -6,3 +7,11 @@ obj-$(CONFIG_MB_LAB_WAITQUEUE)	+= waitqueue_lab.o
 obj-$(CONFIG_MB_LAB_WORKQUEUE)	+= workqueue_lab.o
 obj-$(CONFIG_MB_LAB_RADIX_TREE)	+= radix_tree_lab.o
 obj-$(CONFIG_MB_LAB_RCU)	+= rcu_lab.o
+obj-$(CONFIG_MB_LAB_LOCKING)	+= locking_lab.o
+obj-$(CONFIG_MB_LAB_LOCKDEP)	+= lockdep_lab.o
+obj-$(CONFIG_MB_LAB_ATOMICS)	+= atomics_lab.o
+obj-$(CONFIG_MB_LAB_PTWALK)	+= ptwalk_lab.o
+obj-$(CONFIG_MB_LAB_KPROBE)	+= kprobe_lab.o
+obj-$(CONFIG_MB_LAB_SEQLOCK)	+= seqlock_lab.o
+obj-$(CONFIG_MB_LAB_SYSREG)	+= sysreg_lab.o
+obj-$(CONFIG_MB_LAB_HRTIMER)	+= hrtimer_lab.o
