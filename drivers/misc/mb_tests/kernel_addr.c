@@ -7,7 +7,6 @@
 
 static int pid_mem = 1;
 
-__maybe_unused
 static void print_mem(struct task_struct *task)
 {
         struct mm_struct *mm;
@@ -15,6 +14,13 @@ static void print_mem(struct task_struct *task)
         int count = 0;
         mm = task->mm;
 
+        if (!mm) {
+                printk("%s (pid %d) is a kernel thread, no mm\n",
+                       task->comm, task->pid);
+                return;
+        }
+
+        down_read(&mm->mmap_sem);
         printk("This mm_struct has %d vmas.\n", mm->map_count);
         for (vma = mm->mmap ; vma ; vma = vma->vm_next) {
                 printk ("Vma number %d: \n", ++count);
@@ -27,6 +33,7 @@ static void print_mem(struct task_struct *task)
                  mm->start_code, mm->end_code,
                  mm->start_data, mm->end_data,
                  mm->start_stack);
+        up_read(&mm->mmap_sem);
 }
 
 static int mm_exp_load(void){
@@ -35,7 +42,7 @@ static int mm_exp_load(void){
         for_each_process(task) {
 			if ((task->pid == pid_mem) || (task->pid == current->pid)) {
 					printk("task_struct/process descr name %s pid %d\n", task->comm, task->pid);
-					/*print_mem(task);*/
+					print_mem(task);
 			} 
         }
 
