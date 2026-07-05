@@ -31,6 +31,15 @@ config MB_LAB_WORKQUEUE
 	  Allocates a dedicated workqueue and queues a work item embedded
 	  in an object, recovered in the handler via container_of().
 
+config MB_LAB_LIST
+	tristate "list lab: intrusive doubly-linked list (list_head)"
+	default m
+	help
+	  Builds a list of objects with an embedded struct list_head,
+	  iterates with list_for_each_entry, deletes safely with the
+	  _safe variant, and shows container_of recovering the object
+	  from its node.
+
 config MB_LAB_RADIX_TREE
 	tristate "radix tree lab: sparse array of pointers"
 	default m

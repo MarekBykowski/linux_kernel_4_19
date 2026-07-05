@@ -33,6 +33,7 @@ run_lab procfs_lab poke_procfs
 run_lab completion_lab
 run_lab waitqueue_lab
 run_lab workqueue_lab
+run_lab list_lab
 run_lab radix_tree_lab
 run_lab rcu_lab sleep 2
 run_lab locking_lab
