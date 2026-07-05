@@ -103,7 +103,7 @@ config MB_LAB_SYSREG
 
 config MB_LAB_IRQTHREAD
 	tristate "threaded IRQ lab: top half + threaded bottom half"
-	depends on IRQ_SIM
+	select IRQ_SIM
 	default m
 	help
 	  Uses the kernel IRQ simulator to hand out a real irq with no
