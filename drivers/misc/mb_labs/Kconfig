@@ -137,6 +137,15 @@ config MB_LAB_IPI
 	  the cpu= parameter; the callback runs there in hard interrupt
 	  context and reports what it interrupted.
 
+config MB_LAB_PACING
+	tristate "pacing lab: hrtimer-driven packet pacing (sch_fq style)"
+	default m
+	help
+	  Paces a number of "packets" at a fixed microsecond gap with an
+	  hrtimer that fires in hardirq and kicks a tasklet (softirq) to
+	  do the send, re-arming with absolute time. Measures the achieved
+	  inter-packet gap. Mirrors net/sched/sch_fq.c.
+
 config MB_LAB_HRTIMER
 	tristate "hrtimer lab: periodic timer with jitter measurement"
 	default m
