@@ -68,6 +68,7 @@ echo
 
 run_lab hrtimer_lab
 run_lab context_lab
+run_lab current_lab
 
 echo "=== vma_lab ==="
 vma-lab-run.sh

@@ -101,6 +101,15 @@ config MB_LAB_SYSREG
 	  CurrentEL with mrs and presents them decoded at
 	  /proc/mb_sysregs.
 
+config MB_LAB_CURRENT
+	tristate "current lab: who is `current`, via SP_EL0"
+	default m
+	help
+	  Reports `current` from module init (the modprobe task), a
+	  kthread (its own task, no user mm) and a hardirq (the
+	  interrupted task), confirming on arm64 that current equals
+	  SP_EL0 each time.
+
 config MB_LAB_CONTEXT
 	tristate "context lab: report the kernel execution contexts"
 	default m
