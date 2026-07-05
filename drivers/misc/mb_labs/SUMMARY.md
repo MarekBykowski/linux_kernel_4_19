@@ -1,6 +1,6 @@
 # mb_labs — Kernel Labs Interview Guide
 
-Linux 4.19, arm64, ARM FVP-Base. 21 loadable-module labs under
+Linux 4.19, arm64, ARM FVP-Base. 22 loadable-module labs under
 `drivers/misc/mb_labs/`, run by `labs-run.sh`. **Core concepts** first (most
 interviewable), then each lab with mechanism + gotcha + likely follow-up.
 
@@ -75,6 +75,56 @@ bit  20     NMI                     NMI_OFFSET     = 0x0010_0000
   = ordering across CPUs ("publish data, then pointer").
 - **spinlock / mutex** = mutual exclusion; inside a lock, plain accesses are fine.
 
+## 4b. Kernel linked list (`list_head`) — the most-used structure
+```c
+struct item { int id; struct list_head node; };   /* node EMBEDDED in the object */
+LIST_HEAD(head);                                   /* sentinel; empty = points to self */
+list_add_tail(&it->node, &head);                   /* O(1); list_add = prepend */
+struct item *it = container_of(ptr, struct item, node);   /* node* -> object* */
+list_for_each_entry(it, &head, node) { ... }       /* hides container_of */
+list_for_each_entry_safe(it, tmp, &head, node) { list_del(&it->node); kfree(it); }
+```
+- **Intrusive:** links live *inside* the object (not a separate node holding a
+  pointer). → no per-node alloc, and one object can be on **several lists at once**
+  (multiple `list_head` members). Opposite of a C++ `std::list`.
+- **`container_of(ptr, type, member)`** = `ptr - offsetof(type, member)`; the whole
+  trick. Recovers the object from any embedded member. (Same macro `workqueue_lab`
+  uses on `work_struct`.)
+- **Circular + doubly-linked with a sentinel head:** the ends aren't special-cased
+  (no NULL), so `list_add`/`list_del` are branchless. `list_empty()` = head points
+  to itself.
+- Use **`_safe`** when deleting during iteration (it caches `next` first). RCU
+  variants: `list_add_rcu` / `list_for_each_entry_rcu` (pairs with `rcu_lab`).
+- Also: `hlist_head` (single-pointer head) for hash tables — half the head size.
+
+## 4c. `container_of` — member pointer → enclosing object
+`ptr` is a pointer to the **embedded member**; `container_of` returns a pointer
+to the **whole struct** that contains it.
+```
+container_of(ptr, type, member)
+              |     |      |
+              |     |      +- name of the field inside the struct  (e.g. "node")
+              |     +-------- the struct type                       (e.g. "struct item")
+              +-------------- a pointer to that field
+```
+```c
+struct item { int id; struct list_head node; };
+struct list_head *ptr = &it->node;                 /* points at the member  */
+struct item *obj = container_of(ptr, struct item, node);   /* obj == it     */
+
+#define container_of(ptr, type, member) \
+        ((type *)( (char *)(ptr) - offsetof(type, member) ))
+```
+- **Why:** the member sits at a fixed offset in the struct, so subtract that
+  offset from the member's address to reach the struct's start. Live proof from
+  list_lab: `node@…508 → item@…500` (node at offset 8: `int id` + padding).
+- **Why it exists:** a callback/iterator only receives a pointer to the *embedded
+  member* (a `list_head*`, `work_struct*`, `timer_list*`) because the generic
+  facility doesn't know your object type. `container_of` walks back to the object.
+  `list_for_each_entry` and the workqueue handler both use it internally.
+- **Caveat:** pure pointer arithmetic — no type check. Wrong member/type →
+  silently bogus address. Names must match the real embedding.
+
 ## 5. Bottom-half / deferred-work mechanisms
 | Mechanism | Context | Sleep? | Notes |
 |-----------|---------|:---:|-------|
@@ -147,6 +197,11 @@ bit  20     NMI                     NMI_OFFSET     = 0x0010_0000
   Readers pay ~nothing; writers pay the grace period.
 
 ### Data structures
+- **list_lab** — the kernel's **intrusive doubly-linked list** (`list_head`), the
+  most-used structure in the kernel. Node embedded in the object; build with
+  `list_add_tail`, walk with `list_for_each_entry`, tear down with
+  `list_for_each_entry_safe` + `list_del` + `kfree`; `container_of` recovers the
+  object from its node. See "Kernel linked list" in Part 1.
 - **radix_tree_lab** — sparse index→pointer map. `radix_tree_insert/lookup`,
   `radix_tree_for_each_slot` under `rcu_read_lock`. *Follow-up:* replaced by
   **XArray** in v4.20 (same semantics, nicer API).
