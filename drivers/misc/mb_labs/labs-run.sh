@@ -57,9 +57,11 @@ run_lab sysreg_lab poke_sysregs
 
 echo "=== ipi_lab ==="
 dmesg -c >/dev/null
-echo "before: $(grep 'Function call' /proc/interrupts)"
+echo "before:"
+grep -E 'CPU0|Function call' /proc/interrupts
 modprobe ipi_lab cpu=3
-echo "after:  $(grep 'Function call' /proc/interrupts)"
+echo "after:"
+grep -E 'CPU0|Function call' /proc/interrupts
 rmmod ipi_lab
 dmesg
 echo
