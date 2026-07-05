@@ -101,6 +101,14 @@ config MB_LAB_SYSREG
 	  CurrentEL with mrs and presents them decoded at
 	  /proc/mb_sysregs.
 
+config MB_LAB_CONTEXT
+	tristate "context lab: report the kernel execution contexts"
+	default m
+	help
+	  Runs one reporting function from process, softirq (tasklet) and
+	  hardirq (hrtimer) context, printing the preempt_count and
+	  in_task/in_softirq/in_irq/in_nmi flags side by side.
+
 config MB_LAB_IPI
 	tristate "IPI lab: interrupt a chosen CPU and run a callback"
 	default m
