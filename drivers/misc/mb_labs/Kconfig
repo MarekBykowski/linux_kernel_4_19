@@ -101,6 +101,17 @@ config MB_LAB_SYSREG
 	  CurrentEL with mrs and presents them decoded at
 	  /proc/mb_sysregs.
 
+config MB_LAB_IRQTHREAD
+	tristate "threaded IRQ lab: top half + threaded bottom half"
+	depends on IRQ_SIM
+	default m
+	help
+	  Uses the kernel IRQ simulator to hand out a real irq with no
+	  hardware, then request_threaded_irq()s it: the primary handler
+	  runs in interrupt context and wakes a thread_fn that runs in its
+	  own kthread and may sleep. Fired from software with
+	  irq_sim_fire().
+
 config MB_LAB_CURRENT
 	tristate "current lab: who is `current`, via SP_EL0"
 	default m

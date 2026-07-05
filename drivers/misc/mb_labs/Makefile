@@ -17,4 +17,5 @@ obj-$(CONFIG_MB_LAB_SYSREG)	+= sysreg_lab.o
 obj-$(CONFIG_MB_LAB_IPI)	+= ipi_lab.o
 obj-$(CONFIG_MB_LAB_CONTEXT)	+= context_lab.o
 obj-$(CONFIG_MB_LAB_CURRENT)	+= current_lab.o
+obj-$(CONFIG_MB_LAB_IRQTHREAD)	+= irqthread_lab.o
 obj-$(CONFIG_MB_LAB_HRTIMER)	+= hrtimer_lab.o
