@@ -3,6 +3,14 @@ menu "Marek Bykowski's kernel labs"
 source "drivers/misc/mb_labs/vma_lab/Kconfig"
 source "drivers/misc/mb_labs/mmap_lab/Kconfig"
 
+config MB_LAB_SYSFS
+	tristate "sysfs lab: expose a tunable via /sys (show/store)"
+	default m
+	help
+	  Creates /sys/kernel/mb_sysfs/ with a read-write 'value' and a
+	  read-only 'info' attribute using kobject + kobj_attribute. The
+	  modern, preferred alternative to procfs for driver attributes.
+
 config MB_LAB_PROCFS
 	tristate "procfs lab: boolean knob at /proc/my_bool"
 	default m

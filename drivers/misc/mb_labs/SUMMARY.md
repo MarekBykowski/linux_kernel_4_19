@@ -143,6 +143,27 @@ struct item *obj = container_of(ptr, struct item, node);   /* obj == it     */
 - Choose by "can it sleep?": yes → workqueue / threaded IRQ; no & low-latency →
   softirq (core) / tasklet (legacy) / `WQ_BH` (6.9+).
 
+### How a softirq/tasklet actually gets serviced
+```
+your ctx_tasklet_fn()          <- the callback
+  ^ called by
+tasklet_action()               <- handler for the TASKLET_SOFTIRQ vector
+  ^ called by
+__do_softirq()                 <- THE dispatcher: loops the pending bitmask,
+                                  runs each pending vector's handler
+  ^ called from ONE of these three drain points (first to fire wins):
+  |-- irq_exit() -> invoke_softirq()     (a hardware IRQ is returning)  [common path]
+  |-- local_bh_enable() -> do_softirq()  (someone re-enabled bottom halves)
+  +-- run_ksoftirqd()                    (the ksoftirqd/N daemon got scheduled)
+```
+- The softirq is **not a thread** — `__do_softirq` borrows whatever task is
+  `current` at the drain point. So a tasklet is serviced by: the **interrupted
+  task** (often `swapper/N`, the common inline path), **`ksoftirqd/N`** (overflow:
+  raised in process ctx, or inline budget of ~10 loops/2 ms exceeded), or **another
+  kthread** that hit `local_bh_enable` first (seen live: `rcuc/N`).
+- `in_serving_softirq()` is true regardless of who runs it; `current->comm` reveals
+  which. Per-CPU: raised on CPUn → serviced on CPUn.
+
 ---
 
 # PART 2 — The labs

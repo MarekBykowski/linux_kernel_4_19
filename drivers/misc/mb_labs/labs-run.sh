@@ -20,6 +20,13 @@ poke_procfs() {
 	echo "after write 1: $(cat /proc/my_bool)"
 }
 
+poke_sysfs() {
+	echo "value: $(cat /sys/kernel/mb_sysfs/value)"
+	echo 99 > /sys/kernel/mb_sysfs/value
+	echo "after write: $(cat /sys/kernel/mb_sysfs/value)"
+	cat /sys/kernel/mb_sysfs/info
+}
+
 poke_sysregs() {
 	cat /proc/mb_sysregs
 }
@@ -30,6 +37,7 @@ trigger_opens() {
 }
 
 run_lab procfs_lab poke_procfs
+run_lab sysfs_lab poke_sysfs
 run_lab completion_lab
 run_lab waitqueue_lab
 run_lab workqueue_lab
