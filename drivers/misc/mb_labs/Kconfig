@@ -130,6 +130,14 @@ config MB_LAB_CURRENT
 	  interrupted task), confirming on arm64 that current equals
 	  SP_EL0 each time.
 
+config MB_LAB_FINDTASK
+	tristate "findtask lab: locate a task_struct by name"
+	default m
+	help
+	  Walks the task list with for_each_process and strcmp on ->comm
+	  to find task(s) by name (name= param), printing pid, PF_KTHREAD,
+	  mm state and parent.
+
 config MB_LAB_CONTEXT
 	tristate "context lab: report the kernel execution contexts"
 	default m
