@@ -46,6 +46,7 @@ run_lab radix_tree_lab
 run_lab rcu_lab sleep 2
 run_lab locking_lab
 run_lab locks_lab
+run_lab respool_lab
 run_lab lockdep_lab
 run_lab atomics_lab
 

@@ -11,6 +11,7 @@ obj-$(CONFIG_MB_LAB_RADIX_TREE)	+= radix_tree_lab.o
 obj-$(CONFIG_MB_LAB_RCU)	+= rcu_lab.o
 obj-$(CONFIG_MB_LAB_LOCKING)	+= locking_lab.o
 obj-$(CONFIG_MB_LAB_LOCKS)	+= locks_lab.o
+obj-$(CONFIG_MB_LAB_RESPOOL)	+= respool_lab.o
 obj-$(CONFIG_MB_LAB_LOCKDEP)	+= lockdep_lab.o
 obj-$(CONFIG_MB_LAB_ATOMICS)	+= atomics_lab.o
 obj-$(CONFIG_MB_LAB_PTWALK)	+= ptwalk_lab.o

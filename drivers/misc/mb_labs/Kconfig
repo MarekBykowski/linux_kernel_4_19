@@ -81,6 +81,16 @@ config MB_LAB_LOCKS
 	  context (spinlock is atomic, mutex/semaphore sleep) and
 	  ownership (a semaphore can be up'd by a different thread).
 
+config MB_LAB_RESPOOL
+	tristate "resource-pool lab: counting semaphore, applied"
+	default m
+	help
+	  A bounded pool of N channels shared by M>N client kthreads: the
+	  applicable use of a counting semaphore (borrow/block/return with
+	  backpressure), with a spinlock guarding which channel is free.
+	  Shows peak concurrency capped at N. Contrast the window-cache
+	  style (lock + LRU, never blocks).
+
 config MB_LAB_LOCKDEP
 	tristate "lockdep lab: ABBA ordering caught by PROVE_LOCKING"
 	default m
