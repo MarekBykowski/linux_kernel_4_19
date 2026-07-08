@@ -72,6 +72,15 @@ config MB_LAB_LOCKING
 	  Load with sleep_in_atomic=1 to sleep under the spinlock and let
 	  CONFIG_DEBUG_ATOMIC_SLEEP call out the bug.
 
+config MB_LAB_LOCKS
+	tristate "locks lab: spinlock vs mutex vs semaphore"
+	default m
+	help
+	  Compares the three locks side by side: concurrency limit (a
+	  counting semaphore allows N holders, mutex/spinlock allow 1),
+	  context (spinlock is atomic, mutex/semaphore sleep) and
+	  ownership (a semaphore can be up'd by a different thread).
+
 config MB_LAB_LOCKDEP
 	tristate "lockdep lab: ABBA ordering caught by PROVE_LOCKING"
 	default m
