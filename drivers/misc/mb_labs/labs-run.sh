@@ -84,5 +84,13 @@ run_lab current_lab
 run_lab findtask_lab
 run_lab irqthread_lab
 
+echo "=== procthread_lab ==="
+dmesg -c >/dev/null
+modprobe procthread_lab
+user_procthread
+rmmod procthread_lab
+dmesg
+echo
+
 echo "=== vma_lab ==="
 vma-lab-run.sh

@@ -1,5 +1,6 @@
 obj-y	+= vma_lab/
 obj-y	+= mmap_lab/
+obj-y	+= procthread_lab/
 
 obj-$(CONFIG_MB_LAB_PROCFS)	+= procfs_lab.o
 obj-$(CONFIG_MB_LAB_SYSFS)	+= sysfs_lab.o

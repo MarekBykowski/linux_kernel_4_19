@@ -2,6 +2,7 @@ menu "Marek Bykowski's kernel labs"
 
 source "drivers/misc/mb_labs/vma_lab/Kconfig"
 source "drivers/misc/mb_labs/mmap_lab/Kconfig"
+source "drivers/misc/mb_labs/procthread_lab/Kconfig"
 
 config MB_LAB_SYSFS
 	tristate "sysfs lab: expose a tunable via /sys (show/store)"

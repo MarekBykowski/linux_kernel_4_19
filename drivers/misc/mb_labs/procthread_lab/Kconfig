@@ -1,0 +1,8 @@
+config MB_LAB_PROCTHREAD
+	tristate "concurrency lab: char device hammered by threads + processes"
+	default m
+	help
+	  A misc device /dev/mb_procthread whose write() bumps a mutex-protected
+	  counter. The user_procthread tool drives it from pthreads and fork()'d
+	  processes at once; the counter stays exact, and each open() logs
+	  pid/tgid so you see the kernel's thread-vs-process view.
